@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import userModel from "@/models/User";
 
 import { sendVerficationEmail } from "@/helpers/sendVerificationEmail";
+import { success } from "zod";
 
 export async function POST(request:Request){
     await dbConnect();
@@ -28,14 +29,25 @@ export async function POST(request:Request){
         email,
     })
 
+    const verifyCode=Math.floor(100000+Math.random()*900000).toString();
     if(existingUserByEmail){
-
+        if(existingUserByEmail.isVerified){
+            return Response.json({
+                success:false,
+                message:"User with this email already exist",
+            },{status:400})
+        } else{
+            const hashedPassword=await bcrypt.hash(password,10);
+            existingUserByEmail.password=hashedPassword;
+            existingUserByEmail.verifyCode=verifyCode;
+            existingUserByEmail.verifyCodeExpiry=new Date(Date.now()+3600000)
+            await existingUserByEmail.save();
+        }
     }
     else{
         const hashedPassword= await bcrypt.hash(password,10);
         const expiryDate=new Date();
         expiryDate.setHours(expiryDate.getHours()+1);
-        const verifyCode=Math.floor(100000+Math.random()*900000).toString();
         const newUser=new userModel({
             username,
             email,
@@ -48,6 +60,24 @@ export async function POST(request:Request){
         })
         await newUser.save();
     }
+    // send verification email 
+    const emailResponse = await sendVerficationEmail(
+        email,
+        username,
+        verifyCode
+    )
+    if(!emailResponse){ 
+        return Response.json({
+            success:false,
+            message: "Failed to send verification email", 
+        },{status:500})
+    }
+
+     return Response.json({
+            success:true,
+            message: "User Register Successfully. Please verify your Email", 
+        },{status:201})
+
     } catch (error) {
         console.error("Error in sign-up route:", error);
         return new Response(JSON.stringify({
