@@ -1,6 +1,6 @@
 import dbConnect from "@/lib/dbConnect";
 import bcrypt from "bcryptjs";
-import userModel from "@/models/User";
+import UserModel from "@/models/User";
 
 import { sendVerficationEmail } from "@/helpers/sendVerificationEmail";
 import { success } from "zod";
@@ -10,7 +10,7 @@ export async function POST(request:Request){
     try {
         const {username, email, password}=await request.json();
 
-        const existingUserVerifiedByUsername= await userModel.findOne({
+        const existingUserVerifiedByUsername= await UserModel.findOne({
             username,
             isVerified:true,
         }
@@ -25,7 +25,7 @@ export async function POST(request:Request){
         })
     }
 
-    const existingUserByEmail= await userModel.findOne({
+    const existingUserByEmail= await UserModel.findOne({
         email,
     })
 
@@ -48,7 +48,7 @@ export async function POST(request:Request){
         const hashedPassword= await bcrypt.hash(password,10);
         const expiryDate=new Date();
         expiryDate.setHours(expiryDate.getHours()+1);
-        const newUser=new userModel({
+        const newUser=new UserModel({
             username,
             email,
             password:hashedPassword,
@@ -66,7 +66,7 @@ export async function POST(request:Request){
         username,
         verifyCode
     )
-    if(!emailResponse){ 
+    if(!emailResponse.success){ 
         return Response.json({
             success:false,
             message: "Failed to send verification email", 

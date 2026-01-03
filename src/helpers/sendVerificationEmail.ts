@@ -12,7 +12,7 @@ export async function sendVerficationEmail(
     try { 
         await resend.emails.send({
   from: 'onboarding@resend.dev',
-  to: 'email',
+  to: email,
   subject: 'Mistry verification code',
   react: VerificationEmail({username, otp: verifyCode}),
 });
