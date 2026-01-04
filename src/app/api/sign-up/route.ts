@@ -7,6 +7,7 @@ import { success } from "zod";
 
 export async function POST(request:Request){
     await dbConnect();
+    console.log("key", process.env.RESEND_API_KEY)
     try {
         const {username, email, password}=await request.json();
 
@@ -82,7 +83,7 @@ export async function POST(request:Request){
         console.error("Error in sign-up route:", error);
         return new Response(JSON.stringify({
             success:false,
-            message:"Internal server error",
+            message:"Internal server error at catch",
         }), {status:500});
     }
 }
